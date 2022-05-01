@@ -17,12 +17,13 @@ def find_url():
     for id in range(1, 11):
         url = f"https://tululu.org/b{id}/"
         response = requests.get(url)
+        # title, url_img = find_tag(response)
         try:
             response.raise_for_status()
             check_for_redirect(response)
             title, url_img = find_tag(response)
-            download_txt(title, id)
-            download_image(url_img, title)
+            # download_txt(title, id)
+            # download_image(url_img, title)
         except:
             print(f'Книги не найдено! Пропускаем!')
             continue
@@ -36,7 +37,11 @@ def find_tag(response):
     title = title_split[0].strip(" \xa0 ")
     book_img_id = soup.find(class_='bookimage').find('img')['src']
     url_img = (urljoin('https://tululu.org/', book_img_id))
-    print(title)
+    try:
+        for comment in soup.select('.texts span'):
+            print(comment.text , sep='\n')
+    except:
+        print("Комментариев нет")
     return title, url_img
 
 
