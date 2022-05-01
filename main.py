@@ -1,49 +1,54 @@
 import requests
+import os
 import dotenv
 from pathlib import Path
-from urllib.parse import urlparse
-import re
+from bs4 import BeautifulSoup
+from pathvalidate import sanitize_filename
 
 
-def save_image(file_link, filename):
-    response = requests.get(file_link)
-    response.raise_for_status()
-    with open(filename, "wb") as file:
-        file.write(response.content)
+def find_url():
+    for id in range(1, 11):
+        url = f"https://tululu.org/b{id}/"
+        response = requests.get(url)
+        try:
+            response.raise_for_status()
+            check_for_redirect(response)
+            title = find_tag(response)
+            download_txt(title, id)
+        except:
+            print(f'Книги не найдено! Пропускаем!')
+            continue
 
 
-def make_id():
-    for id in range(1, 10):
-        get_file(id)
+def find_tag(response):
+    soup = BeautifulSoup(response.text, 'lxml')
+    title_tag = soup.find('h1')
+    title_text = title_tag.text
+    title_split = title_text.split("::")
+    title = title_split[0].strip(" \xa0 ")
+    print(title)
+    return title
 
 
-def get_file(id):
-    url = f"https://tululu.org/txt.php?id={id}"
+def download_txt(title, id, folder='books/'):
+    url = f"https://tululu.org/txt.php?id={id}/"
     response = requests.get(url)
     response.raise_for_status()
-    filename = get_filename_from_cd(response.headers.get('content-disposition'))
-    if filename:
-        filename = filename[1:-1]
-    else:
-        filename =f"{id}.txt"
-    with open(f"books\{filename}", 'wb') as file:
+    filename = f"{id}.{title}.txt"
+    filepath = os.path.join(folder, sanitize_filename(filename) + '.txt')
+    with open(filepath, 'wb') as file:
         file.write(response.content)
 
 
-def get_filename_from_cd(cd):
-    if not cd:
-        return None
-    fname = re.findall('filename=(.+)', cd)
-    if len(fname) == 0:
-        return None
-    return fname[0]
+def check_for_redirect(response):
+    if response.history:
+        raise requests.HTTPError
 
 
 def main():
     Path("books").mkdir(parents=True, exist_ok=True)
     dotenv.load_dotenv()
-    make_id()
-
+    find_url()
 
 
 if __name__ == "__main__":
