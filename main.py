@@ -37,9 +37,13 @@ def find_tag(response):
     title = title_split[0].strip(" \xa0 ")
     book_img_id = soup.find(class_='bookimage').find('img')['src']
     url_img = (urljoin('https://tululu.org/', book_img_id))
+    print (title)
     try:
-        for comment in soup.select('.texts span'):
-            print(comment.text , sep='\n')
+        # for comment in soup.select('.texts span'):
+        #     print(comment.text , sep='\n')
+        for category in soup.select('span.d_book a'):
+            print(category.text , sep='\n')
+
     except:
         print("Комментариев нет")
     return title, url_img
