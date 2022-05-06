@@ -1,6 +1,4 @@
 import requests
-# import os
-# import sys
 from pathlib import Path
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
@@ -10,12 +8,6 @@ from pprint import pprint
 import argparse
 
 
-
-# def get_file_ext(url_img):
-#     cut = urlparse(url_img)
-#     return os.path.splitext(cut.path)[-1]
-
-
 def find_book(books_tag, start_id, end_id):
     for id in range(start_id, end_id + 1):
         url = f"https://tululu.org/b{id}/"
@@ -23,7 +15,8 @@ def find_book(books_tag, start_id, end_id):
         response.raise_for_status()
         try:
             check_for_redirect(response)
-            title, url_img, categorys, comments, author = parse_book_page(response)
+            title, url_img, categorys, comments, author = parse_book_page(
+                response)
             books_tag[id] = {
                 'Название': title,
                 'Автор': author,
@@ -32,20 +25,9 @@ def find_book(books_tag, start_id, end_id):
                 'Отзывы': comments
             }
         except:
-            print(f'Книгa не найденa!')
+            print(f'Книгa {id} не найденa!')
             continue
     return books_tag
-        # title, url_img = find_tag(response)
-        # try:
-        #     response.raise_for_status()
-        #     check_for_redirect(response)
-        #     title, url_img = find_tag(response)
-        #     # download_txt(title, id)
-        #     # download_image(url_img, title)
-        # except:
-        #     print(f'Книги не найдено! Пропускаем!')
-        #     continue
-
 
 
 def parse_book_page(response):
@@ -64,29 +46,9 @@ def parse_book_page(response):
             comments.append(comment.text)
         for category in soup.select('span.d_book a'):
             categorys.append(category.text)
-
     except:
         print("Комментариев нет")
     return title, url_img, categorys, comments, author
-
-
-# def download_txt(title, id, folder='books/'):
-#     url = f"https://tululu.org/txt.php?id={id}/"
-#     response = requests.get(url)
-#     response.raise_for_status()
-#     filename = f"{id}.{title}.txt"
-#     filepath = os.path.join(folder, sanitize_filename(filename) + '.txt')
-#     with open(filepath, 'wb') as file:
-#         file.write(response.content)
-
-
-# def download_image(url_img, title, folder='image/'):
-#     response = requests.get(url_img)
-#     response.raise_for_status()
-#     file_ext = get_file_ext(url_img)
-#     filepath = os.path.join(folder, sanitize_filename(title) + file_ext)
-#     with open(filepath, 'wb') as file:
-#         file.write(response.content)
 
 
 def check_for_redirect(response):
@@ -94,20 +56,20 @@ def check_for_redirect(response):
         raise requests.HTTPError
 
 
-def create_parser ():
+def create_parser():
     parser = argparse.ArgumentParser(description='Ввод диапазона ID книг')
-    parser.add_argument ('start', nargs='?', default = 1, help='С какого ID парсить', type=int)
-    parser.add_argument ('end', nargs='?',  default = 11, help='По какой ID парсить', type=int)
+    parser.add_argument('start', nargs='?', default=1,
+                        help='С какого ID парсить', type=int)
+    parser.add_argument('end', nargs='?',  default=11,
+                        help='По какой ID парсить', type=int)
     return parser
 
 
 def main():
     parser = create_parser()
     namespace = parser.parse_args()
-    start_id, end_id =namespace.start, namespace.end
+    start_id, end_id = namespace.start, namespace.end
     books_tag = {}
-    Path("books").mkdir(parents=True, exist_ok=True)
-    Path("image").mkdir(parents=True, exist_ok=True)
     find_book(books_tag, start_id, end_id)
     pprint(books_tag)
 
