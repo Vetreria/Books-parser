@@ -1,11 +1,13 @@
 import requests
-import os
+# import os
+# import sys
 from pathlib import Path
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 from urllib.parse import urljoin
 from urllib.parse import urlparse
 from pprint import pprint
+import argparse
 
 
 
@@ -14,8 +16,8 @@ from pprint import pprint
 #     return os.path.splitext(cut.path)[-1]
 
 
-def find_book(books_tag):
-    for id in range(1, 11):
+def find_book(books_tag, start_id, end_id):
+    for id in range(start_id, end_id + 1):
         url = f"https://tululu.org/b{id}/"
         response = requests.get(url)
         response.raise_for_status()
@@ -92,11 +94,21 @@ def check_for_redirect(response):
         raise requests.HTTPError
 
 
+def create_parser ():
+    parser = argparse.ArgumentParser(description='Ввод диапазона ID книг')
+    parser.add_argument ('start', nargs='?', default = 1, help='С какого ID парсить', type=int)
+    parser.add_argument ('end', nargs='?',  default = 11, help='По какой ID парсить', type=int)
+    return parser
+
+
 def main():
+    parser = create_parser()
+    namespace = parser.parse_args()
+    start_id, end_id =namespace.start, namespace.end
     books_tag = {}
     Path("books").mkdir(parents=True, exist_ok=True)
     Path("image").mkdir(parents=True, exist_ok=True)
-    find_book(books_tag)
+    find_book(books_tag, start_id, end_id)
     pprint(books_tag)
 
 
