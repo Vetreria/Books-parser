@@ -15,13 +15,13 @@ def find_book(books_tag, start_id, end_id):
             response = requests.get(url)
             response.raise_for_status()
             check_for_redirect(response)
-            title, url_img, categorys, comments, author = parse_book_page(
+            title, url_img, genres, comments, author = parse_book_page(
                 response)
             books_tag[id] = {
                 'Название': title,
                 'Автор': author,
                 'Картинка': url_img,
-                'Жанр': categorys,
+                'Жанр': genres,
                 'Отзывы': comments
             }
         except:
@@ -36,16 +36,9 @@ def parse_book_page(response):
     author = soup.find('h1').text.split("::")[1].strip(" \xa0 ")
     book_img_id = soup.find(class_='bookimage').find('img')['src']
     url_img = (urljoin('https://tululu.org/', book_img_id))
-    categorys = []
-    comments = []
-    try:
-        for comment in soup.select('.texts span'):
-            comments.append(comment.text)
-        for category in soup.select('span.d_book a'):
-            categorys.append(category.text)
-    except:
-        print("Комментариев нет")
-    return title, url_img, categorys, comments, author
+    genres = [genre.text for genre in soup.select('span.d_book a')]
+    comments = [comment.text for comment in soup.select('.texts span')]
+    return title, url_img, genres, comments, author
 
 
 def check_for_redirect(response):
