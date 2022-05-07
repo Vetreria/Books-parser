@@ -10,10 +10,10 @@ import argparse
 
 def find_book(books_tag, start_id, end_id):
     for id in range(start_id, end_id + 1):
-        url = f"https://tululu.org/b{id}/"
-        response = requests.get(url)
-        response.raise_for_status()
         try:
+            url = f"https://tululu.org/b{id}/"
+            response = requests.get(url)
+            response.raise_for_status()
             check_for_redirect(response)
             title, url_img, categorys, comments, author = parse_book_page(
                 response)
@@ -32,11 +32,8 @@ def find_book(books_tag, start_id, end_id):
 
 def parse_book_page(response):
     soup = BeautifulSoup(response.text, 'lxml')
-    title_tag = soup.find('h1')
-    title_text = title_tag.text
-    title_split = title_text.split("::")
-    title = title_split[0].strip(" \xa0 ")
-    author = title_split[1].strip(" \xa0 ")
+    title = soup.find('h1').text.split("::")[0].strip(" \xa0 ")
+    author = soup.find('h1').text.split("::")[1].strip(" \xa0 ")
     book_img_id = soup.find(class_='bookimage').find('img')['src']
     url_img = (urljoin('https://tululu.org/', book_img_id))
     categorys = []
