@@ -2,7 +2,6 @@ import argparse
 import logging
 import os
 from pathlib import Path
-from pprint import pprint
 from time import sleep
 from urllib.parse import urljoin, urlparse
 
@@ -104,14 +103,17 @@ def main():
     fh.setFormatter(formatter)
     logger.setLevel('INFO')
     logger.addHandler(fh)
+
     Path("books").mkdir(parents=True, exist_ok=True)
     Path("image").mkdir(parents=True, exist_ok=True)
+
     parser = create_parser()
     namespace = parser.parse_args()
     start_end = (namespace.start, namespace.end)
     
     books_tag = get_books(start_end)
-    pprint(books_tag)
+    logger.warning(books_tag)
+    
     if namespace.get_imgs:
         for id in tqdm(books_tag.keys(), desc="Скачиваем обложки"):
             while True:
