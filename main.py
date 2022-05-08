@@ -14,7 +14,7 @@ from tqdm import tqdm
 logger = logging.getLogger("logger")
 
 
-def get_book(books_tag, start_end):
+def get_books(books_tag, start_end):
     start_id, end_id = start_end
     for id in tqdm(range(start_id, end_id + 1), desc="Собираем книжки"):
         while True:
@@ -108,7 +108,7 @@ def main():
     namespace = parser.parse_args()
     start_end = (namespace.start, namespace.end)
     books_tag = {}
-    get_book(books_tag, start_end)
+    get_books(books_tag, start_end)
     pprint(books_tag)
     if namespace.get_imgs:
         for id in tqdm(books_tag.keys(), desc="Скачиваем обложки"):
