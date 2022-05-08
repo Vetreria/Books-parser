@@ -65,8 +65,9 @@ def get_file_ext(url_img):
 
 
 def download_txt(title, id, folder='books/'):
-    url = f"https://tululu.org/txt.php?id={id}/"
-    response = requests.get(url)
+    url = f"https://tululu.org/txt.php"
+    data = {'id':id}
+    response = requests.get(url, data=data)
     response.raise_for_status()
     filename = f"{id}.{title}.txt"
     filepath = os.path.join(folder, sanitize_filename(filename) + '.txt')
