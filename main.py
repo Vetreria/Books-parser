@@ -45,11 +45,11 @@ def parse_book_page(response):
     genres = [genre.text for genre in soup.select('span.d_book a')]
     comments = [comment.text for comment in soup.select('.texts span')]
     return {
-        'Название': title,
-        'Автор': author,
-        'Картинка': url_img,
-        'Жанр': genres,
-        'Отзывы': comments
+        'Title': title,
+        'Author': author,
+        'Image': url_img,
+        'Genres': genres,
+        'Comments': comments
     }
 
 
@@ -66,8 +66,8 @@ def get_file_ext(url_img):
 
 def download_txt(title, id, folder='books/'):
     url = f"https://tululu.org/txt.php"
-    data = {'id':id}
-    response = requests.get(url, data=data)
+    params = {'id':id}
+    response = requests.get(url, params=params)
     response.raise_for_status()
     filename = f"{id}.{title}.txt"
     filepath = os.path.join(folder, sanitize_filename(filename) + '.txt')
@@ -117,7 +117,7 @@ def main():
             while True:
                 try:
                     download_image(
-                        books_tag[id]['Картинка'], books_tag[id]['Название'])
+                        books_tag[id]['Image'], books_tag[id]['Title'])
                     break
                 except requests.exceptions.ConnectionError:
                     logger.warning(
@@ -130,7 +130,7 @@ def main():
         for id in tqdm(books_tag.keys(), desc="Скачиваем книжки"):
             while True:
                 try:
-                    download_txt(books_tag[id]['Название'], id)
+                    download_txt(books_tag[id]['Title'], id)
                     break
                 except requests.exceptions.ConnectionError:
                     logger.warning(
