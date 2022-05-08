@@ -13,9 +13,9 @@ from tqdm import tqdm
 logger = logging.getLogger("logger")
 
 
-def get_books(start_end):
+def get_books(start_end_img_txt):
     books_tag = {}
-    start_id, end_id = start_end
+    start_id, end_id, get_imgs, get_txt = start_end_img_txt
     for id in tqdm(range(start_id, end_id + 1), desc="Собираем книжки"):
         while True:
             try:
@@ -24,7 +24,7 @@ def get_books(start_end):
                 response.raise_for_status()
                 check_for_redirect(response)
                 books_tag[id] = parse_book_page(
-                    response)
+                    response, get_imgs, get_txt, id)
                 break
             except requests.HTTPError:
                 logger.warning('Книга не найдена')
@@ -35,7 +35,7 @@ def get_books(start_end):
     return books_tag
 
 
-def parse_book_page(response):
+def parse_book_page(response, get_imgs, get_txt, id):
     soup = BeautifulSoup(response.text, 'lxml')
     title = soup.find('h1').text.split("::")[0].strip(" \xa0 ")
     author = soup.find('h1').text.split("::")[1].strip(" \xa0 ")
@@ -43,6 +43,10 @@ def parse_book_page(response):
     url_img = (urljoin('https://tululu.org/', book_img_id))
     genres = [genre.text for genre in soup.select('span.d_book a')]
     comments = [comment.text for comment in soup.select('.texts span')]
+    if get_imgs:
+        download_image(url_img, title)
+    if get_txt:
+        download_txt(title, id)
     return {
         'Title': title,
         'Author': author,
@@ -54,7 +58,7 @@ def parse_book_page(response):
 
 def check_for_redirect(response):
     if response.history:
-        logger.warning('Книга нет. Редирект на главную')
+        logger.warning('Книги нет. Редирект на главную')
         raise requests.HTTPError
 
 
@@ -109,38 +113,10 @@ def main():
 
     parser = create_parser()
     namespace = parser.parse_args()
-    start_end = (namespace.start, namespace.end)
+    start_end_img_txt = (namespace.start, namespace.end, namespace.get_imgs, namespace.get_txt)
     
-    books_tag = get_books(start_end)
+    books_tag = get_books(start_end_img_txt)
     logger.warning(books_tag)
-    
-    if namespace.get_imgs:
-        for id in tqdm(books_tag.keys(), desc="Скачиваем обложки"):
-            while True:
-                try:
-                    download_image(
-                        books_tag[id]['Image'], books_tag[id]['Title'])
-                    break
-                except requests.exceptions.ConnectionError:
-                    logger.warning(
-                        'Нет связи, повторная попытка загрузить обложку через 10 сек.')
-                    sleep(10)
-                except requests.HTTPError:
-                    logger.warning('Ошибка загрузки обложки. Пропуск.')
-                    break
-    if namespace.get_txt:
-        for id in tqdm(books_tag.keys(), desc="Скачиваем книжки"):
-            while True:
-                try:
-                    download_txt(books_tag[id]['Title'], id)
-                    break
-                except requests.exceptions.ConnectionError:
-                    logger.warning(
-                        'Нет связи, повторная попытка загрузить книжку через 10 сек.')
-                    sleep(10)
-                except requests.HTTPError:
-                    logger.warning('Ошибка загрузки книжки. Пропуск.')
-                    break
 
 
 if __name__ == "__main__":
