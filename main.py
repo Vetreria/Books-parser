@@ -69,7 +69,7 @@ def get_file_ext(url_img):
 
 def download_txt(title, id, folder='books/'):
     url = f"https://tululu.org/txt.php"
-    params = {'id':id}
+    params = {'id': id}
     response = requests.get(url, params=params)
     response.raise_for_status()
     filename = f"{id}.{title}.txt"
@@ -113,8 +113,9 @@ def main():
 
     parser = create_parser()
     namespace = parser.parse_args()
-    start_end_img_txt = (namespace.start, namespace.end, namespace.get_imgs, namespace.get_txt)
-    
+    start_end_img_txt = (namespace.start, namespace.end,
+                         namespace.get_imgs, namespace.get_txt)
+
     books_tag = get_books(start_end_img_txt)
     logger.warning(books_tag)
 
