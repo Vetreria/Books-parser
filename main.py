@@ -26,7 +26,7 @@ def get_books(start_id, end_id, get_imgs, get_txt):
                     response, url)
                 if get_imgs:
                     download_image(
-                        books_tag[book_id]['Image'], books_tag[book_id]['Title'])
+                        books_tag[book_id]['Image'], str(book_id))
                 if get_txt:
                     download_txt(books_tag[book_id]['Title'], book_id)
                 break
@@ -41,9 +41,9 @@ def get_books(start_id, end_id, get_imgs, get_txt):
 
 def parse_book_page(response, url):
     soup = BeautifulSoup(response.text, 'lxml')
-    title = soup.find('h1').text.split("::")[0].strip(" \xa0 ")
-    author = soup.find('h1').text.split("::")[1].strip(" \xa0 ")
-    book_img = soup.find(class_='bookimage').find('img')['src']
+    author_title = soup.select_one('#content h1').text
+    title, author = [name.strip() for name in author_title.split('::')]
+    book_img = soup.select_one('div.bookimage img')['src']
     img_url = (urljoin(url, book_img))
     genres = [genre.text for genre in soup.select('span.d_book a')]
     comments = [comment.text for comment in soup.select('.texts span')]
@@ -74,7 +74,7 @@ def download_txt(title, book_id, folder='books/'):
     response.raise_for_status()
     check_for_redirect(response)
     filename = f"{book_id}.{title}.txt"
-    filepath = os.path.join(folder, sanitize_filename(filename) + '.txt')
+    filepath = os.path.join(folder, sanitize_filename(filename))
     with open(filepath, 'wb') as file:
         file.write(response.content)
 
