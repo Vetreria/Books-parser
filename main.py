@@ -13,29 +13,28 @@ from tqdm import tqdm
 logger = logging.getLogger("logger")
 
 
-def get_books(start_id, end_id, get_imgs, get_txt):
+def get_books(book_url, get_imgs, get_txt, folder):
     books_tag = {}
-    for book_id in tqdm(range(start_id, end_id + 1), desc="Собираем книжки"):
-        while True:
-            try:
-                url = f"https://tululu.org/b{book_id}/"
-                response = requests.get(url)
-                response.raise_for_status()
-                check_for_redirect(response)
-                books_tag[book_id] = parse_book_page(
-                    response, url)
-                if get_imgs:
-                    download_image(
-                        books_tag[book_id]['Image'], str(book_id))
-                if get_txt:
-                    download_txt(books_tag[book_id]['Title'], book_id)
-                break
-            except requests.HTTPError:
-                logger.warning('Книга не найдена')
-                break
-            except requests.ConnectionError:
-                logger.warning('Нет связи, повторная попытка через 10 сек.')
-                sleep(10)
+    while True:
+        try:
+            book_id = book_url.split('/')[-2][1:]
+            response = requests.get(book_url)
+            response.raise_for_status()
+            check_for_redirect(response)
+            books_tag[book_id] = parse_book_page(
+                response, book_url)
+            if get_imgs:
+                download_image(
+                books_tag[book_id]['Image'], str(book_id), folder)
+            if get_txt:
+                    download_txt(books_tag[book_id]['Title'], book_id, folder)
+            break
+        except requests.HTTPError:
+            logger.warning('Книга не найдена')
+            break
+        except requests.ConnectionError:
+            logger.warning('Нет связи, повторная попытка через 10 сек.')
+            sleep(10)
     return books_tag
 
 
@@ -67,7 +66,7 @@ def get_file_ext(img_url):
     return os.path.splitext(split_url.path)[-1]
 
 
-def download_txt(title, book_id, folder='books/'):
+def download_txt(title, book_id, folder):
     url = f"https://tululu.org/txt.php"
     params = {'id': book_id}
     response = requests.get(url, params=params)
@@ -79,7 +78,7 @@ def download_txt(title, book_id, folder='books/'):
         file.write(response.content)
 
 
-def download_image(img_url, title, folder='image/'):
+def download_image(img_url, title, folder):
     response = requests.get(img_url)
     response.raise_for_status()
     check_for_redirect(response)
@@ -99,6 +98,7 @@ def create_parser():
                         default=False, help='Cкачивать обложки книг')
     parser.add_argument('-t', '--get_txt', action='store_true',
                         default=False, help='Cкачивать текст книг')
+    parser.add_argument('-d', '--dest_folder', default='content/', help='Путь к каталогу с результатами парсинга: картинкам, книгами, json')
     return parser
 
 
@@ -109,15 +109,12 @@ def main():
     fh.setFormatter(formatter)
     logger.setLevel('INFO')
     logger.addHandler(fh)
-
-    Path("books").mkdir(parents=True, exist_ok=True)
-    Path("image").mkdir(parents=True, exist_ok=True)
-
     parser = create_parser()
     namespace = parser.parse_args()
-    start_id, end_id, get_imgs, get_txt = (namespace.start, namespace.end,
-                                           namespace.get_imgs, namespace.get_txt)
-    books_tag = get_books(start_id, end_id, get_imgs, get_txt)
+    start_id, end_id, get_imgs, get_txt, folder = (namespace.start, namespace.end,
+                                           namespace.get_imgs, namespace.get_txt, namespace.dest_folder)
+    Path(folder).mkdir(parents=True, exist_ok=True)
+    books_tag = [get_books(f"https://tululu.org/b{book_id}/", get_imgs, get_txt, folder) for book_id in tqdm(range(start_id, end_id + 1), desc="Собираем книжки")]
     logger.warning(books_tag)
 
 

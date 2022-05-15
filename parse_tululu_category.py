@@ -10,7 +10,7 @@ import requests
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 from tqdm import tqdm
-from main import parse_book_page, download_image, download_txt, check_for_redirect
+from main import check_for_redirect, get_books
 
 
 def find_last_page(url):
@@ -30,27 +30,8 @@ def parse_category_page(category_url, page):
     return book_links
 
 
-def get_category_books(book_url):
-    books_tag = {}
-    while True:
-        try:
-            book_id = book_url.split('/')[-2][1:]
-            response = requests.get(book_url)
-            response.raise_for_status()
-            check_for_redirect(response)
-            books_tag[book_id] = parse_book_page(response, book_url)
-            download_image(books_tag[book_id]['Image'], book_id)
-            download_txt(books_tag[book_id]['Title'], book_id)
-            break
-        except requests.HTTPError:
-            break
-        except requests.ConnectionError:
-            sleep(10)
-    return books_tag
-
-
-def save_json(books_tag, folder='.'):
-    filename = 'category.json'
+def save_json(books_tag, json_path, folder):
+    filename = f'{json_path}.json'
     filepath = os.path.join(folder, filename)
     with open(filepath, 'w', encoding='utf8') as file:
         json.dump(books_tag, file, ensure_ascii=False)
@@ -62,6 +43,12 @@ def create_parser(category_url):
                         help='С какой страницы парсить', type=int)
     parser.add_argument('--end_page', nargs='?',  default=find_last_page(category_url),
                         help='По какую страницу парсить', type=int)
+    parser.add_argument('-i', '--get_imgs', action='store_true',
+                        default=False, help='Cкачивать обложки книг')
+    parser.add_argument('-t', '--get_txt', action='store_true',
+                        default=False, help='Cкачивать текст книг')
+    parser.add_argument('-j', '--json_path', default='category', help='Указать свой путь к *.json файлу с результатами')
+    parser.add_argument('-d', '--dest_folder', default='content/', help='Путь к каталогу с результатами парсинга: картинкам, книгами, json')
     return parser
 
 
@@ -69,12 +56,13 @@ def main():
     category_url = "https://tululu.org/l55/"
     parser = create_parser(category_url)
     namespace = parser.parse_args()
-    start_page, end_page = (namespace.start_page, namespace.end_page)
-    # last_page = 4
+    start_page, end_page, get_imgs, get_txt, json_path, folder = (namespace.start_page, namespace.end_page,
+                                           namespace.get_imgs, namespace.get_txt, namespace.json_path, namespace.dest_folder)
+    Path(folder).mkdir(parents=True, exist_ok=True)
     links = [parse_category_page(category_url, page) for page in range(start_page,int(end_page))]   
     book_links = [link for page in links for link in page]
-    books_tag = [get_category_books(book_url) for book_url in tqdm(book_links)]
-    save_json(books_tag)
+    books_tag = [get_books(book_url, get_imgs, get_txt, folder) for book_url in tqdm(book_links)]
+    save_json(books_tag, json_path, folder)
 
 
 if __name__ == "__main__":
