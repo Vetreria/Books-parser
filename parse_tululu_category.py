@@ -1,32 +1,34 @@
 import argparse
 import os
+import logging
 import json
 from pathlib import Path
-from time import sleep
 from urllib.parse import urljoin, urlparse
 
 
 import requests
 from bs4 import BeautifulSoup
-from pathvalidate import sanitize_filename
 from tqdm import tqdm
-from main import check_for_redirect, get_books
+from main import check_for_redirect, get_book
 
 
-def find_last_page(url):
-    response = requests.get(url)
-    response.raise_for_status()
-    soup = BeautifulSoup(response.text, 'lxml')
-    return soup.select('.npage')[-1].text
+logger = logging.getLogger("logger")
+
 
 def parse_category_page(category_url, page):
     url = f"{category_url}/{page}"
-    response = requests.get(url)
-    response.raise_for_status()
-    check_for_redirect(response)
-    soup = BeautifulSoup(response.text, 'lxml')
-    book_tags = soup.select('.bookimage')
-    book_links = [urljoin(url, book_tag.select_one('a')['href']) for book_tag in book_tags]
+    book_links = []
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        check_for_redirect(response)
+        soup = BeautifulSoup(response.text, 'lxml')
+        book_tags = soup.select('.bookimage')
+        book_links = [urljoin(url, book_tag.select_one('a')['href'])
+                      for book_tag in book_tags]
+
+    except requests.HTTPError:
+        logger.warning('Нет странички')
     return book_links
 
 
@@ -37,32 +39,41 @@ def save_json(books_tag, json_path, folder):
         json.dump(books_tag, file, ensure_ascii=False)
 
 
-def create_parser(category_url):
-    parser = argparse.ArgumentParser(description='Ввод диапазона страниц каталога книг')
+def create_parser():
+    parser = argparse.ArgumentParser(
+        description='Ввод диапазона страниц каталога книг')
     parser.add_argument('--start_page', nargs='?', default=1,
                         help='С какой страницы парсить', type=int)
-    parser.add_argument('--end_page', nargs='?',  default=find_last_page(category_url),
+    parser.add_argument('--end_page', nargs='?',  default=9999,
                         help='По какую страницу парсить', type=int)
     parser.add_argument('-i', '--get_imgs', action='store_true',
                         default=False, help='Cкачивать обложки книг')
     parser.add_argument('-t', '--get_txt', action='store_true',
                         default=False, help='Cкачивать текст книг')
-    parser.add_argument('-j', '--json_path', default='category', help='Указать свой путь к *.json файлу с результатами')
-    parser.add_argument('-d', '--dest_folder', default='content/', help='Путь к каталогу с результатами парсинга: картинкам, книгами, json')
+    parser.add_argument('-j', '--json_path', default='category',
+                        help='Указать свой путь к *.json файлу с результатами')
+    parser.add_argument('-d', '--dest_folder', default='content/',
+                        help='Путь к каталогу с результатами парсинга: картинкам, книгами, json')
     return parser
 
 
 def main():
+    fh = logging.FileHandler("log.log")
+    formatter = logging.Formatter(
+        "%(asctime)s - %(levelname)s - %(funcName)s: %(lineno)d - %(message)s")
+    fh.setFormatter(formatter)
+    logger.setLevel('INFO')
+    logger.addHandler(fh)
     category_url = "https://tululu.org/l55/"
-    parser = create_parser(category_url)
+    parser = create_parser()
     namespace = parser.parse_args()
-    start_page, end_page, get_imgs, get_txt, json_path, folder = (namespace.start_page, namespace.end_page,
-                                           namespace.get_imgs, namespace.get_txt, namespace.json_path, namespace.dest_folder)
-    Path(folder).mkdir(parents=True, exist_ok=True)
-    links = [parse_category_page(category_url, page) for page in range(start_page,int(end_page))]   
-    book_links = [link for page in links for link in page]
-    books_tag = [get_books(book_url, get_imgs, get_txt, folder) for book_url in tqdm(book_links)]
-    save_json(books_tag, json_path, folder)
+    Path(namespace.dest_folder).mkdir(parents=True, exist_ok=True)
+    links = []
+    [links.extend(parse_category_page(category_url, page))
+     for page in range(namespace.start_page, namespace.end_page)]
+    books_tag = [get_book(book_url, namespace.get_imgs, namespace.get_txt,
+                          namespace.dest_folder) for book_url in tqdm(links)]
+    save_json(books_tag, namespace.json_path, namespace.dest_folder)
 
 
 if __name__ == "__main__":

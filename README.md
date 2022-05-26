@@ -41,7 +41,7 @@ python main.py -i
 Для скачивания книжек укажите ключик -t
 
 ```
-python main.py -i
+python main.py -t
 ```
 
 Можно всё сразу

@@ -1,4 +1,5 @@
 import argparse
+from importlib.resources import path
 import logging
 import os
 from pathlib import Path
@@ -13,11 +14,11 @@ from tqdm import tqdm
 logger = logging.getLogger("logger")
 
 
-def get_books(book_url, get_imgs, get_txt, folder):
+def get_book(book_url, get_imgs, get_txt, folder):
     books_tag = {}
     while True:
         try:
-            book_id = book_url.split('/')[-2][1:]
+            book_id = urlparse(book_url).path[2:-1]
             response = requests.get(book_url)
             response.raise_for_status()
             check_for_redirect(response)
@@ -25,9 +26,9 @@ def get_books(book_url, get_imgs, get_txt, folder):
                 response, book_url)
             if get_imgs:
                 download_image(
-                books_tag[book_id]['Image'], str(book_id), folder)
+                    books_tag[book_id]['Image'], str(book_id), folder)
             if get_txt:
-                    download_txt(books_tag[book_id]['Title'], book_id, folder)
+                download_txt(books_tag[book_id]['Title'], book_id, folder)
             break
         except requests.HTTPError:
             logger.warning('Книга не найдена')
@@ -83,7 +84,7 @@ def download_image(img_url, title, folder):
     response.raise_for_status()
     check_for_redirect(response)
     file_ext = get_file_ext(img_url)
-    filepath = os.path.join(folder, sanitize_filename(title) + file_ext)
+    filepath = f"{os.path.join(folder, sanitize_filename(title))}{file_ext}"
     with open(filepath, 'wb') as file:
         file.write(response.content)
 
@@ -98,7 +99,8 @@ def create_parser():
                         default=False, help='Cкачивать обложки книг')
     parser.add_argument('-t', '--get_txt', action='store_true',
                         default=False, help='Cкачивать текст книг')
-    parser.add_argument('-d', '--dest_folder', default='content/', help='Путь к каталогу с результатами парсинга: картинкам, книгами, json')
+    parser.add_argument('-d', '--dest_folder', default='content/',
+                        help='Путь к каталогу с результатами парсинга: картинкам, книгами, json')
     return parser
 
 
@@ -111,10 +113,11 @@ def main():
     logger.addHandler(fh)
     parser = create_parser()
     namespace = parser.parse_args()
-    start_id, end_id, get_imgs, get_txt, folder = (namespace.start, namespace.end,
-                                           namespace.get_imgs, namespace.get_txt, namespace.dest_folder)
-    Path(folder).mkdir(parents=True, exist_ok=True)
-    books_tag = [get_books(f"https://tululu.org/b{book_id}/", get_imgs, get_txt, folder) for book_id in tqdm(range(start_id, end_id + 1), desc="Собираем книжки")]
+    Path(namespace.dest_folder).mkdir(parents=True, exist_ok=True)
+    parser_range = tqdm(
+        range(namespace.start, namespace.end + 1), desc="Собираем книжки")
+    books_tag = [get_book(f"https://tululu.org/b{book_id}/", namespace.get_imgs,
+                          namespace.get_txt, namespace.dest_folder) for book_id in parser_range]
     logger.warning(books_tag)
 
 
