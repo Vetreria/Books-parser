@@ -3,7 +3,7 @@ import os
 import logging
 import json
 from pathlib import Path
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 
 
 import requests
@@ -15,21 +15,16 @@ from main import check_for_redirect, get_book
 logger = logging.getLogger("logger")
 
 
-def parse_category_page(category_url, page):
-    url = f"{category_url}/{page}"
-    book_links = []
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        check_for_redirect(response)
-        soup = BeautifulSoup(response.text, 'lxml')
-        book_tags = soup.select('.bookimage')
-        book_links = [urljoin(url, book_tag.select_one('a')['href'])
-                      for book_tag in book_tags]
-
-    except requests.HTTPError:
-        logger.warning('Нет странички')
+def parse_category_page(soup):
+    book_tags = soup.select('.bookimage')
+    book_links = [book_tag.select_one('a')['href']
+                  for book_tag in book_tags]
     return book_links
+
+
+def join_url(book_links, url):
+    links = [urljoin(url, book_link) for book_link in book_links]
+    return links
 
 
 def save_json(books_tag, json_path, folder):
@@ -68,9 +63,21 @@ def main():
     parser = create_parser()
     namespace = parser.parse_args()
     Path(namespace.dest_folder).mkdir(parents=True, exist_ok=True)
+    start_page = namespace.start_page
+    stop_page = namespace.end_page
+
     links = []
-    [links.extend(parse_category_page(category_url, page))
-     for page in range(namespace.start_page, namespace.end_page)]
+    for page in tqdm(range(start_page, stop_page)):
+        try:
+            url = f"{category_url}/{page}"
+            response = requests.get(url)
+            response.raise_for_status()
+            check_for_redirect(response)
+            soup = BeautifulSoup(response.text, 'lxml')
+            links.extend(join_url(parse_category_page(soup), url))
+        except requests.HTTPError:
+            logger.warning('Нет странички')
+
     books_tag = [get_book(book_url, namespace.get_imgs, namespace.get_txt,
                           namespace.dest_folder) for book_url in tqdm(links)]
     save_json(books_tag, namespace.json_path, namespace.dest_folder)
