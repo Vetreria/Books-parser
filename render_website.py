@@ -4,7 +4,7 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 import dotenv
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-
+from livereload import Server
 
 
 def render_page():
@@ -44,8 +44,9 @@ def main():
     # excel_path = os.getenv("EXCEL_PATH")
     # start_year = os.getenv("START_YEAR")
     # render_page(excel_path, start_year)
-    server = HTTPServer(("0.0.0.0", 8000), SimpleHTTPRequestHandler)
-    server.serve_forever()
+    server = Server()
+    server.watch('template.html', render_page)
+    server.serve(port=5500, root='.')
 
 
 if __name__ == "__main__":
