@@ -25,7 +25,7 @@ def get_book(book_url, get_imgs, get_txt, folder):
             books_tag[book_id] = parse_book_page(
                 response, book_url)
             if get_imgs:
-                download_image(
+                books_tag[book_id]['Image_patch'] = download_image(
                     books_tag[book_id]['Image'], str(book_id), folder)
             if get_txt:
                 download_txt(books_tag[book_id]['Title'], book_id, folder)
@@ -87,6 +87,7 @@ def download_image(img_url, title, folder):
     filepath = f"{os.path.join(folder, sanitize_filename(title))}{file_ext}"
     with open(filepath, 'wb') as file:
         file.write(response.content)
+    return filepath
 
 
 def create_parser():
