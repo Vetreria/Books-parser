@@ -5,14 +5,11 @@
   <!-- Required meta tags -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
   <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="../static/bootstrap.min.css">
-
   <link rel='icon' type='image/png' href='../static/favicon.ico' sizes='16x16'>
   <link rel='icon' type='image/png' href='../static/favicon.ico' sizes='32x32'>
   <link rel='icon' type='image/png' href='../static/favicon.ico' sizes='96x96'>
-
   <title>Hello, world!</title>
 </head>
 
@@ -20,7 +17,6 @@
   <div class="container"></div>
   <nav aria-label="Page navigation example">
     <ul class="pagination justify-content-center pt-3 pb-3 border-bottom">
-
       {% if page_num == 1 %}
       <li class='page-item disabled'><a class="page-link">Назад</a></li>
       {% else %}
@@ -43,7 +39,6 @@
       </li>
     </ul>
   </nav>
-
   <div class='row'>
     {% for row in category %}
     {% for book_card in row %}
@@ -66,14 +61,11 @@
               {% else %}
               <a href="#" target="_blank">Нет текста</a>
               {% endif %}
-
-
             </div>
           </div>
         </div>
       </div>
     </div>
-
     {% endfor %}
     <div class='w-100'></div>
     {% endfor %}

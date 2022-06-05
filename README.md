@@ -14,7 +14,7 @@ pip install -r requirements.txt
 
 
 
-## Запустить
+## Запуск первой части парсера
 
 
 Для работы первой части программы запустите:
@@ -59,6 +59,8 @@ python main.py -dest_folder  store
 python main.py -d  store
 ```
 
+# Запуск второй части парсера
+
 Для второй части программы нужно запустить другой скрипт
 
 ```
@@ -97,6 +99,22 @@ python parse_tululu_category.py --start_page 700 --end_page 701
 ```
 --dest_folder или -d
 ```
+# Запуск рендера докальной версии каталога
+
+Запустите скрипт render_website.py
+
+```
+render_website.py
+```
+
+В папку pages будут созданы файлы index1.html, index2.html, index..n.html
+Количество файлов зависит от объёмов ранее собраных данных о книгах.
+
+Пример работы локального каталога:
+https://vetreria.github.io/Books-parser/pages/index1.html 
+
+
+
 
 ## Цель проекта
 
