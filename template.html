@@ -16,7 +16,7 @@
 <body>
     <div class="container"></div>
     <nav aria-label="Page navigation example">
-        <ul class="pagination justify-content-center">
+        <ul class="pagination justify-content-center pt-3 pb-3 border-bottom">
 
             {% if page_num == 1 %}
             <li class='page-item disabled'><a class="page-link">Назад</a></li></li>
@@ -59,7 +59,16 @@
                             <div class="card-body">
                                 <h5 class="card-title">{{ book_card.Title }}</h5>
                                 <h5 class="card-title">{{ book_card.Author }}</h5>
+                                {% for genre in book_card.Genres %}
+                                <p class='card-text'><span class='badge badge-secondary'>{{ genre }}</span></p>
+                                {% endfor %}
+                                {% if book_card.txt_patch  %}
                                 <a href="../{{ book_card.txt_patch|urlencode }}" target="_blank">Читать</a>
+                              {% else %}
+                              <a href="#" target="_blank">Нет текста</a>
+                                  {% endif %}
+                                
+                            
                             </div>
                         </div>
                     </div>
