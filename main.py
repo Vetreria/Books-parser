@@ -28,7 +28,7 @@ def get_book(book_url, get_imgs, get_txt, folder):
                 books_tag[book_id]['Image_patch'] = download_image(
                     books_tag[book_id]['Image'], str(book_id), folder)
             if get_txt:
-                download_txt(books_tag[book_id]['Title'], book_id, folder)
+                books_tag[book_id]['txt_patch'] = download_txt(books_tag[book_id]['Title'], book_id, folder)
             break
         except requests.HTTPError:
             logger.warning('Книга не найдена')
@@ -77,6 +77,7 @@ def download_txt(title, book_id, folder):
     filepath = os.path.join(folder, sanitize_filename(filename))
     with open(filepath, 'wb') as file:
         file.write(response.content)
+    return filepath
 
 
 def download_image(img_url, title, folder):
