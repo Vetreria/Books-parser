@@ -5,7 +5,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from livereload import Server
-from more_itertools import chunked, unzip
+from more_itertools import chunked
 
 
 def render_page():
@@ -17,11 +17,10 @@ def render_page():
     )
     books_in_pages = list(chunked(category, count_per_page))
     page_count = len(books_in_pages)
-
     for page_num, books in enumerate(books_in_pages, 1):
-        books_catalog=[]
+        books_catalog = []
         for books_card in books:
-           books_catalog = books_catalog + list(books_card.values())
+            books_catalog = books_catalog + list(books_card.values())
         row_catalog = chunked(books_catalog, 2)
         template = env.get_template("template.html")
         rendered_page = template.render(
