@@ -5,27 +5,27 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from livereload import Server
-from more_itertools import chunked
+from more_itertools import chunked, unzip
 
 
 def render_page():
     count_per_page = 20
     with open("content/category.json", "r", encoding="utf8") as file:
-        category_json = file.read()
-    category = json.loads(category_json)
+        category = json.load(file)
     env = Environment(
         loader=FileSystemLoader("."), autoescape=select_autoescape(["html", "xml"])
     )
     books_in_pages = list(chunked(category, count_per_page))
-    count_page = len(books_in_pages)
+    page_count = len(books_in_pages)
 
-    for page_num, books_catalog in enumerate(books_in_pages, 1):
-        books_catalog = [books_card[book_card]
-                         for books_card in books_catalog for book_card in books_card]
+    for page_num, books in enumerate(books_in_pages, 1):
+        books_catalog=[]
+        for books_card in books:
+           books_catalog = books_catalog + list(books_card.values())
         row_catalog = chunked(books_catalog, 2)
         template = env.get_template("template.html")
         rendered_page = template.render(
-            category=row_catalog, page_num=page_num, count_page=count_page)
+            category=row_catalog, page_num=page_num, page_count=page_count)
         with open(f"pages/index{page_num}.html", "w", encoding="utf8") as file:
             file.write(rendered_page)
 
